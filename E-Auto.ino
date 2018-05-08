@@ -7,12 +7,12 @@
 
 // pin declaration
 // do NOT use DigitalOut 0 & 1 (reserved for Serial)
-const int pin_servo = 0;//pin for steering control 
-const int pin_motor = 0;//pin for motor control
-const int pin_deadManSwitch = 0;//dead man swich pin
-const int pin_spuleLeft = 0;//Left resonant circuit
-const int pin_spuleRight = 0;//Right resonant circuit
-const int pin_speedSensor = 0;//Input signal for speed sensor signal
+const int pin_servo = 0;			//pin for steering control 
+const int pin_motor = 0;			//pin for motor control
+const int pin_deadManSwitch = 0;	//dead man swich pin
+const int pin_spuleLeft = 0;		//Left resonant circuit
+const int pin_spuleRight = 0;		//Right resonant circuit
+const int pin_speedSensor = 0;		//Input signal for speed sensor signal
 
 
 //init global variables and objects
