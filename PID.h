@@ -1,11 +1,13 @@
 #pragma once
 
-struct pidParameterSet{
+struct pidParameterSet
+{
   double p, i, d, soll, base, antiWindup, outMin, outMax;
 };
 
 
-class PID {
+class PID
+{
   public:
     PID(pidParameterSet);
     ~PID();
@@ -18,7 +20,9 @@ class PID {
   private:   
     double lastError, integral;
     double p, i, d;
-    double outMin = 0, outMax = 255, soll, base;
-    double antiWindup;  
-};
+	double outMin = 0, outMax = 255, soll, base;
 
+	unsigned long lastMicros = 0;
+    double antiWindup;
+
+};

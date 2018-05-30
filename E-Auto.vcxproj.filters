@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="E-Auto.ino" />
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DirectionControl.cpp">

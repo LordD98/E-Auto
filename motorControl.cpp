@@ -1,29 +1,35 @@
 #include "motorControl.h"
 #include "Arduino.h"
 
-MotorControl::MotorControl(unsigned int deadManSwitchPinIn, unsigned int motorPinIn, pidParameterSet pidParameters)
-	: controller(pidParameters)
-{
-
-}
+MotorControl::MotorControl(unsigned int deadManSwitchPinIn,unsigned int motorPinIn,pidParameterSet pidParameters)
+	: controller(pidParameters), deadManSwitchPin(deadManSwitchPinIn), motorPin(motorPinIn) 
+{ }
 
 /**
  * This function must not be changed
  */
 void MotorControl::setup()
 {
-	pinMode(MotorControl::motorPin, OUTPUT);
-	MotorControl::setState(MOTOR_STATES::STOP);
+	pinMode(motorPin, OUTPUT);
+	setState(MOTOR_STATES::STOP);
 }
 
+
+/**
+ * Set the new wanted speed
+ * speedSetpoint = Drehzahl
+ */
 void MotorControl::setSpeed(double speedSetpoint)
 {
-
+	controller.setSoll(speedSetpoint);
 }
 
+/**
+ * Update the controller with the new current speed
+ */
 void MotorControl::updateController(double currentSpeed)
 {
-
+	motorDuty = (int)round(controller.calcOutput(currentSpeed));
 }
 
 /**
@@ -31,13 +37,13 @@ void MotorControl::updateController(double currentSpeed)
  */
 void MotorControl::updateMotor(void)
 {
-	if(MotorControl::motorState==MOTOR_STATES::RUN && !digitalRead(MotorControl::deadManSwitchPin))
+	if(motorState == MOTOR_STATES::RUN && !digitalRead(deadManSwitchPin))
 	{
-		analogWrite(MotorControl::motorPin, MotorControl::motorDuty);
+		analogWrite(motorPin, motorDuty);
 	}
 	else
 	{
-		analogWrite(MotorControl::motorPin, 0);	//Stop motor
+		analogWrite(motorPin, 0);	//Stop motor
 	}
 }
 
@@ -46,14 +52,19 @@ void MotorControl::updateMotor(void)
  */
 void MotorControl::setState(MOTOR_STATES stateIn)
 {
-	if(MotorControl::motorState != stateIn)
+	if(motorState != stateIn)
 	{
-		MotorControl::motorState = stateIn;
-		if(MotorControl::motorState==MOTOR_STATES::RUN)
+		motorState = stateIn;
+		if(motorState == MOTOR_STATES::RUN)
 		{
-			MotorControl::controller.resetIntegrator();
+			controller.resetIntegrator();
 		}
-		MotorControl::updateMotor();	//update Motor in case of a state change
+		updateMotor();	//update Motor in case of a state change
 	}
+}
+
+void MotorControl::setDuty(int duty)
+{
+	motorDuty = duty;
 }
 

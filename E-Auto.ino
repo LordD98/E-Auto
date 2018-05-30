@@ -8,37 +8,47 @@
 // pin declaration
 // do NOT use DigitalOut 0 & 1 (reserved for Serial)
 const int pin_servo = 0;			//pin for steering control 
-const int pin_motor = 0;			//pin for motor control
-const int pin_deadManSwitch = 0;	//dead man swich pin
+const int pin_motor = 3;			//pin for motor control
+const int pin_deadManSwitch =  8;	//dead man swich pin
 const int pin_spuleLeft = 0;		//Left resonant circuit
 const int pin_spuleRight = 0;		//Right resonant circuit
-const int pin_speedSensor = 0;		//Input signal for speed sensor signal
+const int pin_speedSensor = 2;		//Input signal for speed sensor signal; Pin2: INT0
 
 
 //init global variables and objects
-const int directionServoCenter = 0;//Center level for directionServo
+const int directionServoCenter = 0;	//Center level for directionServo
 const int directionMaxValue = 0;
 const int directionMinValue = 0;
-const int ofTrackDetectionLevel = 0; // minValue for off-track detection
-DirectionControl directionControl = DirectionControl(pin_servo,{directionMaxValue,directionMinValue,directionServoCenter},{0, 0, 0, 0, directionServoCenter, 0, directionMinValue, directionMaxValue});
+const int ofTrackDetectionLevel = 0;// minValue for off-track detection
+DirectionControl directionControl = DirectionControl(
+	pin_servo,																		// Servo-Pin
+	{directionMaxValue,directionMinValue,directionServoCenter},						// directionParamSet
+	{0, 0, 0, 0, directionServoCenter, 0, directionMinValue, directionMaxValue}		// pidParamSet
+);
 
+const double idleSpeed = 0;			//Speed setpoint for idle
+MotorControl motorControl = MotorControl(pin_deadManSwitch, pin_motor, {13, 10.0, 0, 40, 0, 0, 5, 253}); 
+// double p, i, d, soll, base, antiWindup, outMin, outMax;
 
-const double idleSpeed = 0;//Speed setpoint for idle
-MotorControl motorControl(pin_deadManSwitch,pin_motor,{0,0,0,0,0,0,0,0});
+SpeedSensor speedSens = SpeedSensor(pin_speedSensor);
 
-
-SpeedSensor speedSens(pin_speedSensor);
+unsigned long lastMicros = 0;
 
 
 void setup()
 {
 	staticInitCode();	//this function call must not be removed
-	
 	//debugging
 	Serial.begin(9600); // for serial logging
 	pinMode(LED_BUILTIN, OUTPUT);  // declare onboard-led (indicates "on track")
 	
-	directionControl.testServo();
+	//directionControl.testServo();
+
+	motorControl.setup();
+	speedSens.setup();
+
+	//pinMode(14, INPUT);
+	motorControl.setState(MOTOR_STATES::RUN);
 }
 
 /**
@@ -46,20 +56,39 @@ void setup()
  */
 void loop()
 {
+	static unsigned long startMillis = millis();
+	Serial.println(speedSens.getSpeed());
 
+	//motorControl.setDuty(6);
 
-   
+	motorControl.updateController(speedSens.getSpeed());
+	motorControl.updateMotor();
+
+	double reltime = fmod(millis() - startMillis, 3000.0);
+	motorControl.setSpeed(30.0*reltime/3000.0);	// Ramp with maximum at 30.0 after 3 seconds.
 }
 
+/**
+ * The main speed interrupt handler
+ */
 void speedInterrupt()
 {
-
+	unsigned long newMicros = micros();
+	speedSens.interrupt(newMicros - lastMicros);
+	lastMicros = newMicros;
 }
 
-
-int getAverage(int pin)
+/**
+ * Gibt den Durschnitt des Arrays zurück
+ */
+double getAverage(unsigned long *buff, int len)
 {
-
+	double avg = 0.0;
+	for (int i = 0; i<len; i++)
+	{
+		avg += (double)buff[i] / len;
+	}
+	return avg;
 }
 
 /**
@@ -68,6 +97,6 @@ int getAverage(int pin)
 void staticInitCode()
 {
 	pinMode(pin_deadManSwitch, INPUT_PULLUP);	//Set pullup for dead man switch
+	pinMode(9, OUTPUT);
+	digitalWrite(9, LOW);
 }
-
-

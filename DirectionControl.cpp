@@ -1,10 +1,13 @@
+
 #include "DirectionControl.h"
 #include "Arduino.h"
 
 
-
-DirectionControl::DirectionControl(int servoPinIn, directionParameterSet directionParameters, pidParameterSet pidParameters)
-	: controller(pidParameters)
+DirectionControl::DirectionControl(
+	int servoPinIn,
+	directionParameterSet directionParameters,
+	pidParameterSet pidParameters
+)	: controller(pidParameters)
 {
 
 }
@@ -13,7 +16,7 @@ DirectionControl::~DirectionControl() {}
 
 void DirectionControl::setup()
 {
-	DirectionControl::directionServo.attach(DirectionControl::servoPin); // initialize servodirectionServo.attach(pin_servo); // initialize
+	directionServo.attach(servoPin); // initialize servodirectionServo.attach(pin_servo); // initialize
 }
 
 
