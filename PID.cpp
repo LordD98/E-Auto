@@ -52,6 +52,8 @@ double PID::calcOutput(double input)
 	}
 
 	lastError = currentError;
+	//Serial.print("Error: ");
+	//Serial.println(currentError);
 	return output;
 }
 

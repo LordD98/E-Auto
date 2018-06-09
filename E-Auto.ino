@@ -1,5 +1,7 @@
 
+#include <Servo.h>
 #include <string.h>
+//#include <string>
 #include <math.h>
 #include "DirectionControl.h"
 #include "SpeedSensor.h"
@@ -7,7 +9,7 @@
 
 // pin declaration
 // do NOT use DigitalOut 0 & 1 (reserved for Serial)
-const int pin_servo = 0;			//pin for steering control 
+const int pin_servo = 5;			//pin for steering control 
 const int pin_motor = 3;			//pin for motor control
 const int pin_deadManSwitch =  8;	//dead man swich pin
 const int pin_spuleLeft = 0;		//Left resonant circuit
@@ -27,12 +29,14 @@ DirectionControl directionControl = DirectionControl(
 );
 
 const double idleSpeed = 0;			//Speed setpoint for idle
-MotorControl motorControl = MotorControl(pin_deadManSwitch, pin_motor, {13, 10.0, 0, 40, 0, 0, 5, 253}); 
+MotorControl motorControl = MotorControl(pin_deadManSwitch, pin_motor, {2.502, 6.54118, 0, 0, 0, 0, 5 /*5*/, 253}); // okay: {5.0, 5.0, 0, 0, 0, 0, 5 /*5*/, 253} 
 // double p, i, d, soll, base, antiWindup, outMin, outMax;
 
 SpeedSensor speedSens = SpeedSensor(pin_speedSensor);
 
 unsigned long lastMicros = 0;
+
+Servo servo;
 
 
 void setup()
@@ -44,11 +48,14 @@ void setup()
 	
 	//directionControl.testServo();
 
+	//servo.attach(pin_servo);
+	pinMode(pin_servo, OUTPUT);
+
 	motorControl.setup();
 	speedSens.setup();
 
 	//pinMode(14, INPUT);
-	motorControl.setState(MOTOR_STATES::RUN);
+	motorControl.setState(MOTOR_STATES::STOP);
 }
 
 /**
@@ -56,16 +63,51 @@ void setup()
  */
 void loop()
 {
-	static unsigned long startMillis = millis();
-	Serial.println(speedSens.getSpeed());
+	static unsigned long startMicros = micros();
 
 	//motorControl.setDuty(6);
 
-	motorControl.updateController(speedSens.getSpeed());
-	motorControl.updateMotor();
+	//motorControl.updateController(speedSens.getSpeed());
 
-	double reltime = fmod(millis() - startMillis, 3000.0);
-	motorControl.setSpeed(30.0*reltime/3000.0);	// Ramp with maximum at 30.0 after 3 seconds.
+
+	//const double T = 100000000.0;
+	//double reltime = fmod(micros() - startMicros, T);
+	//if (reltime < T / 2)
+	//{
+	//	//motorControl.setDuty(150.0*reltime / T);
+	//	motorControl.setSpeed(30.0* reltime / T + 10);
+	//}
+	//else
+	//{
+	//	//motorControl.setDuty(150.0* (T-reltime) / T);
+	//	motorControl.setSpeed(30.0* (T-reltime) / T + 10);
+	//}
+
+
+	const long T = 2000000;
+	int pos;
+	long reltime = (micros() - startMicros) % T;
+	if (reltime < T / 2)
+	{
+		pos = map(reltime, 0, T, 0, 180);
+	}
+	else
+	{
+		pos = map(T-reltime, 0, T, 0, 180);
+		//servo.write(50.0* (T-reltime) / T - 25.0);
+	}
+	servo.write(pos);
+	delay(15);
+
+	//motorControl.setSpeed(20);
+
+	//motorControl.updateMotor();
+
+	//Serial.print("Speed: ");
+	//Serial.println(speedSens.getSpeed());
+	//Serial.println("\nSoll:");
+	//Serial.println(30.0*reltime / 3000.0);
+	//delay(10);
 }
 
 /**

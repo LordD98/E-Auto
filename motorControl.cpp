@@ -37,7 +37,7 @@ void MotorControl::updateController(double currentSpeed)
  */
 void MotorControl::updateMotor(void)
 {
-	if(motorState == MOTOR_STATES::RUN && !digitalRead(deadManSwitchPin))
+	if(motorState == MOTOR_STATES::RUN  && !digitalRead(deadManSwitchPin))
 	{
 		analogWrite(motorPin, motorDuty);
 	}
