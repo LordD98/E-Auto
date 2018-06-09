@@ -17,7 +17,7 @@ void MotorControl::setup()
 
 /**
  * Set the new wanted speed
- * speedSetpoint = Drehzahl
+ * speedSetpoint =^= rotational speed in turns/sec
  */
 void MotorControl::setSpeed(double speedSetpoint)
 {
@@ -29,6 +29,10 @@ void MotorControl::setSpeed(double speedSetpoint)
  */
 void MotorControl::updateController(double currentSpeed)
 {
+	if (!digitalRead(deadManSwitchPin))		// If the car stands still (due to deadman switch),
+	{										// reset the integral.
+		controller.resetIntegrator();		// This prevents a rough starting of the car
+	}										// due to old integral values
 	motorDuty = (int)round(controller.calcOutput(currentSpeed));
 }
 
@@ -63,6 +67,9 @@ void MotorControl::setState(MOTOR_STATES stateIn)
 	}
 }
 
+/**
+ * Manual override of the PID-output values
+ */
 void MotorControl::setDuty(int duty)
 {
 	motorDuty = duty;

@@ -25,19 +25,19 @@ void SpeedSensor::interrupt(unsigned long microseconds)
 	//if(microseconds > MIN_INT)
 	//	currentSpeed = 1000000.0 / (double)microseconds;
 	
-	static uint8_t index = 0;
+	static byte index = 0;
 	
-	if (microseconds > MIN_INT)
-	{
+	if (microseconds > MIN_INT)		// if microseconds is smaller than MIN_INT
+	{								// discard the value as it must be a glitch
 		lastTurn = microseconds;
 		rawValArray[index] = microseconds;
-		index++;
-		index %= 8;
+		index =	(index+1) % 8;
 	}
 }
 
 /**
- * ???
+ * Returns current state
+ * Use: ???
  */
 bool SpeedSensor::getState()
 {
@@ -49,7 +49,13 @@ bool SpeedSensor::getState()
  */
 double SpeedSensor::getSpeed()
 {
-	if (micros() - lastMicros < 5e5)
+	// An option here would be to check if micros()-lastmicros > lastTurn
+	//		=> then returning 1e6/(micros()-lastmicros) or averaging with this value
+	// or else returning the average as below
+	// This would account for either really slow rotanional speed or a still standing car
+	// !Also, check if micros()-lastmicros is bigger than an even bigger value than 5e5 to define speed 0!
+
+	if (micros() - lastMicros < 5e5)	// 5e5µs is about 0.5 turns/sec
 	{
 		currentSpeed = 1e6/getAverage(rawValArray, arraySize);	// Average
 		//currentSpeed = 1e6 / lastTurn;						// Instantaneous
@@ -57,7 +63,7 @@ double SpeedSensor::getSpeed()
 	}
 	else
 	{
-		return 0;
+		return 0.0;
 	}
 }
 

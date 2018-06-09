@@ -1,7 +1,6 @@
 
 #include <Servo.h>
 #include <string.h>
-//#include <string>
 #include <math.h>
 #include "DirectionControl.h"
 #include "SpeedSensor.h"
@@ -29,8 +28,8 @@ DirectionControl directionControl = DirectionControl(
 );
 
 const double idleSpeed = 0;			//Speed setpoint for idle
-MotorControl motorControl = MotorControl(pin_deadManSwitch, pin_motor, {2.502, 6.54118, 0, 0, 0, 0, 5 /*5*/, 253}); // okay: {5.0, 5.0, 0, 0, 0, 0, 5 /*5*/, 253} 
-// double p, i, d, soll, base, antiWindup, outMin, outMax;
+MotorControl motorControl = MotorControl(pin_deadManSwitch, pin_motor, {2.502, 6.54118, 0, 0, 0, 0, 5, 253});	// Works well
+// These values are also okay: {5.0, 5.0, 0, 0, 0, 0, 5, 253} 
 
 SpeedSensor speedSens = SpeedSensor(pin_speedSensor);
 
@@ -55,7 +54,7 @@ void setup()
 	speedSens.setup();
 
 	//pinMode(14, INPUT);
-	motorControl.setState(MOTOR_STATES::STOP);
+	motorControl.setState(MOTOR_STATES::STOP);	// Do not start Motor
 }
 
 /**
@@ -84,18 +83,18 @@ void loop()
 	//}
 
 
-	const long T = 2000000;
-	int pos;
-	long reltime = (micros() - startMicros) % T;
-	if (reltime < T / 2)
-	{
-		pos = map(reltime, 0, T, 0, 180);
-	}
-	else
-	{
-		pos = map(T-reltime, 0, T, 0, 180);
-		//servo.write(50.0* (T-reltime) / T - 25.0);
-	}
+	const long T = 2000000;									// Triangle wave
+	int pos;												// with Period T = 2s,
+	long reltime = (micros() - startMicros) % T;			// amplitude between [0, 180]
+	if (reltime < T / 2)									//
+	{														//
+		pos = map(reltime, 0, T, 0, 180);					//
+	}														//
+	else													//
+	{														//
+		pos = map(T-reltime, 0, T, 0, 180);					//
+		//servo.write(50.0* (T-reltime) / T - 25.0);		//
+	}														//
 	servo.write(pos);
 	delay(15);
 
