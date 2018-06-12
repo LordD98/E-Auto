@@ -15,6 +15,8 @@ const int pin_spuleLeft = 0;		//Left resonant circuit
 const int pin_spuleRight = 0;		//Right resonant circuit
 const int pin_speedSensor = 2;		//Input signal for speed sensor signal; Pin2: INT0
 
+const int pin_test = 19;
+
 
 //init global variables and objects
 const int directionServoCenter = 0;	//Center level for directionServo
@@ -45,16 +47,21 @@ void setup()
 	Serial.begin(9600); // for serial logging
 	pinMode(LED_BUILTIN, OUTPUT);  // declare onboard-led (indicates "on track")
 	
+	pinMode(pin_test, INPUT);
 	//directionControl.testServo();
 
-	//servo.attach(pin_servo);
-	pinMode(pin_servo, OUTPUT);
+	servo.attach(pin_servo);
+	//pinMode(pin_servo, OUTPUT);
+
+	//pinMode(12, OUTPUT);		// Just for Voltage divider
+	//digitalWrite(12, HIGH);		// Just for Voltage divider
+
 
 	motorControl.setup();
 	speedSens.setup();
 
 	//pinMode(14, INPUT);
-	motorControl.setState(MOTOR_STATES::STOP);	// Do not start Motor
+	motorControl.setState(MOTOR_STATES::RUN);	// Do not start Motor
 }
 
 /**
@@ -66,7 +73,7 @@ void loop()
 
 	//motorControl.setDuty(6);
 
-	//motorControl.updateController(speedSens.getSpeed());
+	motorControl.updateController(speedSens.getSpeed());
 
 
 	//const double T = 100000000.0;
@@ -83,30 +90,37 @@ void loop()
 	//}
 
 
-	const long T = 2000000;									// Triangle wave
+	const long T = 5000000;									// Triangle wave
 	int pos;												// with Period T = 2s,
-	long reltime = (micros() - startMicros) % T;			// amplitude between [0, 180]
-	if (reltime < T / 2)									//
-	{														//
-		pos = map(reltime, 0, T, 0, 180);					//
-	}														//
-	else													//
-	{														//
-		pos = map(T-reltime, 0, T, 0, 180);					//
-		//servo.write(50.0* (T-reltime) / T - 25.0);		//
-	}														//
+	//long reltime = (micros() - startMicros) % T;			// amplitude between [0, 180]
+	//if (reltime < T / 2)									//
+	//{														//
+	//	pos = map(reltime, 0, T/2, 0, 180);					//
+	//}														//
+	//else													//
+	//{														//
+	//	pos = map(T-reltime, 0, T/2, 0, 180);				//
+	//}
+	
+	//
+	//	Gerade bei pos = 101s
+	// 
+
+	//pos = map(analogRead(pin_test), 0, 1023, 0, 180);
+	pos = 101;
+	Serial.println(pos);
 	servo.write(pos);
-	delay(15);
 
-	//motorControl.setSpeed(20);
+	motorControl.setSpeed(20);
 
-	//motorControl.updateMotor();
+	motorControl.updateMotor();
 
 	//Serial.print("Speed: ");
 	//Serial.println(speedSens.getSpeed());
 	//Serial.println("\nSoll:");
 	//Serial.println(30.0*reltime / 3000.0);
 	//delay(10);
+	delay(15);
 }
 
 /**
