@@ -61,7 +61,8 @@ void setup()
 	speedSens.setup();
 
 	//pinMode(14, INPUT);
-	motorControl.setState(MOTOR_STATES::RUN);	// Do not start Motor
+	motorControl.setState(MOTOR_STATES::RUN);	// Do start Motor
+	motorControl.softStart(20.0, &speedSens);
 }
 
 /**
@@ -108,11 +109,10 @@ void loop()
 
 	//pos = map(analogRead(pin_test), 0, 1023, 0, 180);
 	pos = 101;
-	Serial.println(pos);
+	//Serial.println(pos);
 	servo.write(pos);
 
 	motorControl.setSpeed(20);
-
 	motorControl.updateMotor();
 
 	//Serial.print("Speed: ");

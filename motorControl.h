@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PID.h"
+#include "SpeedSensor.h"
 
 enum class MOTOR_STATES{ STOP, RUN };
 
@@ -14,6 +15,7 @@ class MotorControl
     void setState(MOTOR_STATES);
     void updateController(double);
     void setup();
+	void softStart(double speed, SpeedSensor *sens);
 
 	void setDuty(int duty);	// Only for testing
     

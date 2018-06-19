@@ -47,7 +47,7 @@ double PID::calcOutput(double input)
 	lastError = currentError;				// Save currentError for differential calculation in next call
 	
 											//Serial.print("Error: ");
-	//Serial.println(currentError);
+	//Serial.println(integral);
 	return output;
 }
 

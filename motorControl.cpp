@@ -14,6 +14,25 @@ void MotorControl::setup()
 	setState(MOTOR_STATES::STOP);
 }
 
+void MotorControl::softStart(double speed, SpeedSensor *sens)
+{
+	controller.setSoll(speed);
+	double currentSpeed = sens->getSpeed();
+	for (int i = 0; i < 255 && currentSpeed < speed; i++)
+	{
+		setDuty(i);
+		updateMotor();
+		//controller.resetIntegrator();
+		controller.calcOutput(currentSpeed);
+		//Serial.print("i: ");
+		//Serial.println(i);
+		//Serial.print("Speed: ");
+		//Serial.println(currentSpeed);
+		currentSpeed = sens->getSpeed();
+		delay(5);
+	}
+}
+
 
 /**
  * Set the new wanted speed
@@ -29,7 +48,7 @@ void MotorControl::setSpeed(double speedSetpoint)
  */
 void MotorControl::updateController(double currentSpeed)
 {
-	if (!digitalRead(deadManSwitchPin))		// If the car stands still (due to deadman switch),
+	if (digitalRead(deadManSwitchPin))		// If the car stands still (due to deadman switch),
 	{										// reset the integral.
 		controller.resetIntegrator();		// This prevents a rough starting of the car
 	}										// due to old integral values
