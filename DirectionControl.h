@@ -17,7 +17,7 @@ public:
 	int getDirection();
 	
 	void updateDirection();
-	void updateController(double);
+	void updateController(int);
 	void testServo();
 	void setup();
 	Servo directionServo;
@@ -26,10 +26,10 @@ private:
 	PID controller;
 	
 	int servoPin;
-	int centerPos;
-	int maxPos;
-	int minPos;
+	int centerPos;	// ~= 0
+	int maxPos;		// Werte an der Spule
+	int minPos;		// Werte an der Spule
 	
-	unsigned int currentDirection;
+	int currentDirection;	// left - right
 };
 

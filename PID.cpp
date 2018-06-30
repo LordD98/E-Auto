@@ -22,16 +22,17 @@ double PID::calcOutput(double input)
 
 	double output = 0;
 
-	unsigned long newMicros = micros();		// Get time since last call of this function
-	base = (newMicros - lastMicros)/1e6;	// and put in into base
-	lastMicros = newMicros;					//
+	unsigned long newMicros = micros();					// Get time since last call of this function
+	double time_delta = (newMicros - lastMicros)/1e6;			// and put in into base
+	lastMicros = newMicros;								//
 
-	antiWindup = integral;					// Save old integral value
-	integral += base * currentError;		// Update integral
+	antiWindup = integral;								// Save old integral value
+	integral += time_delta * currentError;				// Update integral
 
-	output += p*currentError;					// Calculate new output
-	output += i*integral;						//
-	output += d*(currentError-lastError)/base;	//
+	output += p*currentError;							// Calculate new output
+	output += i*integral;								//
+	output += d*(currentError-lastError)/time_delta;	//
+	output += base;
 
 	if (output < outMin)					// Output has to be bounded
 	{										// between outMin & outMax
@@ -52,7 +53,7 @@ double PID::calcOutput(double input)
 }
 
 /**
- * Return time intervall between two calls of calcOutput()
+ * 
  * Use: ???
  */
 double PID::getBase()	

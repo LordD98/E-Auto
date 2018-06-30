@@ -11,22 +11,26 @@
 const int pin_servo = 5;			//pin for steering control 
 const int pin_motor = 3;			//pin for motor control
 const int pin_deadManSwitch =  8;	//dead man swich pin
-const int pin_spuleLeft = 0;		//Left resonant circuit
-const int pin_spuleRight = 0;		//Right resonant circuit
+const int pin_spuleLeft = A1;		//Left resonant circuit
+const int pin_spuleRight = A0;		//Right reso nant circuit
 const int pin_speedSensor = 2;		//Input signal for speed sensor signal; Pin2: INT0
 
 const int pin_test = 19;
 
 
 //init global variables and objects
-const int directionServoCenter = 0;	//Center level for directionServo
-const int directionMaxValue = 0;
-const int directionMinValue = 0;
+const int directionCenter = -150;
+const int directionMaxValue = 400;
+const int directionMinValue = -400;
+
+const int directionServoCenter = 101;	//Center level for directionServo
+const int directionServoMaxValue = 171;	// 101+70 = 171
+const int directionServoMinValue = 9;	// actually 101-70 = 31
 const int ofTrackDetectionLevel = 0;// minValue for off-track detection
 DirectionControl directionControl = DirectionControl(
 	pin_servo,																		// Servo-Pin
-	{directionMaxValue,directionMinValue,directionServoCenter},						// directionParamSet
-	{0, 0, 0, 0, directionServoCenter, 0, directionMinValue, directionMaxValue}		// pidParamSet
+	{directionMaxValue,directionMinValue,directionCenter},						// directionParamSet
+	{ (-1.0)* 70.0/400.0 * 0.5, 0, 0, directionCenter, directionServoCenter, 0, directionServoMinValue, directionServoMaxValue}		// pidParamSet
 );
 
 const double idleSpeed = 0;			//Speed setpoint for idle
@@ -37,7 +41,7 @@ SpeedSensor speedSens = SpeedSensor(pin_speedSensor);
 
 unsigned long lastMicros = 0;
 
-Servo servo;
+int rawValArray[8];
 
 
 void setup()
@@ -47,11 +51,12 @@ void setup()
 	Serial.begin(9600); // for serial logging
 	pinMode(LED_BUILTIN, OUTPUT);  // declare onboard-led (indicates "on track")
 	
-	pinMode(pin_test, INPUT);
-	//directionControl.testServo();
+	//pinMode(pin_test, INPUT);
 
-	servo.attach(pin_servo);
-	//pinMode(pin_servo, OUTPUT);
+	directionControl.setup();
+	directionControl.testServo();
+
+	//while (1);
 
 	//pinMode(12, OUTPUT);		// Just for Voltage divider
 	//digitalWrite(12, HIGH);		// Just for Voltage divider
@@ -61,7 +66,7 @@ void setup()
 	speedSens.setup();
 
 	//pinMode(14, INPUT);
-	motorControl.setState(MOTOR_STATES::RUN);	// Do start Motor
+	motorControl.setState(MOTOR_STATES::STOP);	// Do start Motor
 	motorControl.softStart(20.0, &speedSens);
 }
 
@@ -76,41 +81,30 @@ void loop()
 
 	motorControl.updateController(speedSens.getSpeed());
 
+	static byte index = 0;
+							// discard the value as it must be a glitch
 
-	//const double T = 100000000.0;
-	//double reltime = fmod(micros() - startMicros, T);
-	//if (reltime < T / 2)
-	//{
-	//	//motorControl.setDuty(150.0*reltime / T);
-	//	motorControl.setSpeed(30.0* reltime / T + 10);
-	//}
-	//else
-	//{
-	//	//motorControl.setDuty(150.0* (T-reltime) / T);
-	//	motorControl.setSpeed(30.0* (T-reltime) / T + 10);
-	//}
+	int sensor_left = analogRead(pin_spuleLeft);
+	int sensor_right = analogRead(pin_spuleRight);
+
+	rawValArray[index] = sensor_left-sensor_right;
+	index = (index + 1)  % 8;
+	int average = getAverageInt(rawValArray, 8);
+	int max = getAbsMaxInt(rawValArray, 8);
+	if (max<6)
+	{
+		digitalWrite(LED_BUILTIN, HIGH);
+	}
+	else
+	{
+		digitalWrite(LED_BUILTIN, LOW);
+	}
+
+	directionControl.updateController(average);
+	directionControl.updateDirection();
+	//Serial.println(average);  
 
 
-	const long T = 5000000;									// Triangle wave
-	int pos;												// with Period T = 2s,
-	//long reltime = (micros() - startMicros) % T;			// amplitude between [0, 180]
-	//if (reltime < T / 2)									//
-	//{														//
-	//	pos = map(reltime, 0, T/2, 0, 180);					//
-	//}														//
-	//else													//
-	//{														//
-	//	pos = map(T-reltime, 0, T/2, 0, 180);				//
-	//}
-	
-	//
-	//	Gerade bei pos = 101s
-	// 
-
-	//pos = map(analogRead(pin_test), 0, 1023, 0, 180);
-	pos = 101;
-	//Serial.println(pos);
-	servo.write(pos);
 
 	motorControl.setSpeed(20);
 	motorControl.updateMotor();
@@ -120,6 +114,7 @@ void loop()
 	//Serial.println("\nSoll:");
 	//Serial.println(30.0*reltime / 3000.0);
 	//delay(10);
+	
 	delay(15);
 }
 
@@ -145,6 +140,35 @@ double getAverage(unsigned long *buff, int len)
 	}
 	return avg;
 }
+
+
+int getAverageInt(int *buff, int len)
+{
+	long avg = 0;
+	for (int i = 0; i < len; i++)
+	{
+		avg += buff[i];
+	}
+	return avg/len;
+}
+
+int getAbsMaxInt(int *buff, int len)
+{
+	int max = 0;
+	for (int i = 0; i < len; i++)
+	{
+		if (max < buff[i] || buff[i] < ((-1)*max))
+		{
+			max = buff[i];
+			if (max < 0)
+			{
+				max *= -1;
+			}
+		}
+	}
+	return max;
+}
+
 
 /**
  * The following code must not be changed
