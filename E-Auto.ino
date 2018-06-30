@@ -25,7 +25,7 @@ const int directionMinValue = -400;
 
 const int directionServoCenter = 101;	//Center level for directionServo
 const int directionServoMaxValue = 171;	// 101+70 = 171
-const int directionServoMinValue = 9;	// actually 101-70 = 31
+const int directionServoMinValue = 31;	// actually 101-70 = 31
 const int ofTrackDetectionLevel = 0;// minValue for off-track detection
 DirectionControl directionControl = DirectionControl(
 	pin_servo,																		// Servo-Pin

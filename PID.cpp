@@ -20,19 +20,17 @@ double PID::calcOutput(double input)
 {
 	double currentError = soll - input;
 
-	double output = 0;
-
 	unsigned long newMicros = micros();					// Get time since last call of this function
-	double time_delta = (newMicros - lastMicros)/1e6;			// and put in into base
+	double time_delta = (newMicros - lastMicros)/1e6;	//
 	lastMicros = newMicros;								//
 
 	antiWindup = integral;								// Save old integral value
 	integral += time_delta * currentError;				// Update integral
 
+	double output = base;
 	output += p*currentError;							// Calculate new output
 	output += i*integral;								//
 	output += d*(currentError-lastError)/time_delta;	//
-	output += base;
 
 	if (output < outMin)					// Output has to be bounded
 	{										// between outMin & outMax
@@ -53,8 +51,8 @@ double PID::calcOutput(double input)
 }
 
 /**
- * 
- * Use: ???
+ * Returns the center output value of the PID
+ * See PID.h for explanation
  */
 double PID::getBase()	
 {
