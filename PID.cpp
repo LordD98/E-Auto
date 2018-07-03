@@ -18,7 +18,6 @@ PID::~PID() {}
 
 double PID::calcOutput(double input)
 {
-
 	double currentError = soll - input;
 
 	unsigned long newMicros = micros();					// Get time since last call of this function
@@ -33,26 +32,22 @@ double PID::calcOutput(double input)
 	output += i*integral;								//
 	output += d*(currentError-lastError)/time_delta;	//
 
-	if (output < outMin)					// Output has to be bounded
-	{										// between outMin & outMax
-		integral = antiWindup;				//
-		output = outMin;					//
-	}										//
-	if(output > outMax)						//
-	{										//
-		integral = antiWindup;				//
-		output = outMax;					//
-	}										//
+	if (output < outMin)								// Output has to be bounded
+	{													// between outMin & outMax
+		integral = antiWindup;							//
+		output = outMin;								//
+	}													//
+	if (output > outMax)								//
+	{													//
+		integral = antiWindup;							//
+		output = outMax;								//
+	}													//
 
-	lastError = currentError;				// Save currentError for differential calculation in next call
-	
-											//Serial.print("Error: ");
-	//Serial.println(integral);
+	lastError = currentError;							// Save currentError for differential calculation in next call
 
 	//Serial.print(input);
 	//Serial.print(",");
 	//Serial.println(output);
-
 	return output;
 }
 

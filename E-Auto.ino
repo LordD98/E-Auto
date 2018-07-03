@@ -15,8 +15,6 @@ const int pin_spuleLeft = A1;		//Left resonant circuit
 const int pin_spuleRight = A0;		//Right reso nant circuit
 const int pin_speedSensor = 2;		//Input signal for speed sensor signal; Pin2: INT0
 
-const int pin_test = 19;
-
 
 //init global variables and objects
 const int directionCenter = -150;
@@ -27,8 +25,9 @@ const int directionServoCenter = 101;	//Center level for directionServo
 const int directionServoMaxValue = 171;	// 101+70 = 171
 const int directionServoMinValue = 31;	// actually 101-70 = 31
 const int ofTrackDetectionLevel = 0;// minValue for off-track detection
+
 DirectionControl directionControl = DirectionControl(
-	pin_servo,																		// Servo-Pin
+	pin_servo,																	// Servo-Pin
 	{directionMaxValue,directionMinValue,directionCenter},						// directionParamSet
 	{ 0.04, 0.0, 0.0109375, directionCenter, directionServoCenter, 0, directionServoMinValue, directionServoMaxValue}		// pidParamSet
 	//	| 0.0525 stable	  p = (1.0)* 70.0/400.0 * 0.5 => Schwingung
@@ -51,23 +50,15 @@ void setup()
 	//debugging
 	Serial.begin(9600); // for serial logging
 	pinMode(LED_BUILTIN, OUTPUT);  // declare onboard-led (indicates "on track")
-	
-	//pinMode(pin_test, INPUT);
 
 	directionControl.setup();
 	//directionControl.testServo();
-
-	//while (1);
-
-	//pinMode(12, OUTPUT);		// Just for Voltage divider
-	//digitalWrite(12, HIGH);		// Just for Voltage divider
 
 
 	motorControl.setup();
 	speedSens.setup();
 
-	//pinMode(14, INPUT);
-	motorControl.setState(MOTOR_STATES::RUN);	// Do start Motor
+	motorControl.setState(MOTOR_STATES::RUN);	// Start motor
 	//motorControl.softStart(10.0, &speedSens);
 }
 
@@ -87,9 +78,9 @@ void loop()
 	
 	int max = getAbsMaxInt(rawValArray, 8);					// Off-Track Detection
 	if (max<6)												//
-	{														//
-		digitalWrite(LED_BUILTIN, HIGH);					//
-	}														//
+	{														//	TODO:
+		digitalWrite(LED_BUILTIN, HIGH);					//  Try to measure both levels
+	}														//  induvidually
 	else													//
 	{														//
 		digitalWrite(LED_BUILTIN, LOW);						//
@@ -102,15 +93,15 @@ void loop()
 	directionControl.updateDirection();						// 
 	motorControl.updateMotor();								// 
 
-	//Serial.println(directionControl.getDirection());
-	//Serial.println(average);
-	//Serial.print("Speed: ");
-	//Serial.println(speedSens.getSpeed());
-	//Serial.println("\nSoll:");
-	//Serial.println(30.0*reltime / 3000.0);
-	//delay(10);
+
+	//Serial.println(directionControl.getDirection());		// Debug
+	//Serial.println(average);								//
+	//Serial.print("Speed: ");								//
+	//Serial.println(speedSens.getSpeed());					//
+	//Serial.println("\nSoll:");							//
+	//Serial.println(30.0*reltime / 3000.0);				//
 	
-	delay(15);
+	//delay(15);
 }
 
 /**
