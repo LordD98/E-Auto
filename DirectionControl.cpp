@@ -17,13 +17,26 @@ void DirectionControl::setup()
 	directionServo.attach(servoPin);
 }
 
+const int deadManSwitchPin = 8;
 
 void DirectionControl::updateController(int is)	// is € [-1023, 1023]
 {
-	double new_direction;
-	new_direction = controller.calcOutput(static_cast<double>(is) / 1.0);
-	
-	currentDirection = static_cast<int>(new_direction);
+
+	if (digitalRead(deadManSwitchPin))		
+	{										
+		controller.resetIntegrator();
+		controller.calcOutput(static_cast<double>(is) / 1.0);
+		directionServo.write(101);
+	}										
+	else
+	{
+		double new_direction;
+		new_direction = controller.calcOutput(static_cast<double>(is) / 1.0);
+		Serial.print(is);
+		Serial.print(",");
+		Serial.println(new_direction);
+		currentDirection = static_cast<int>(new_direction);
+	}
 }
 
 int DirectionControl::getDirection()
@@ -33,7 +46,6 @@ int DirectionControl::getDirection()
 
 void DirectionControl::updateDirection()
 {
-	Serial.println(currentDirection);
 	directionServo.write(currentDirection);
 }
 

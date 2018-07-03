@@ -18,6 +18,7 @@ PID::~PID() {}
 
 double PID::calcOutput(double input)
 {
+
 	double currentError = soll - input;
 
 	unsigned long newMicros = micros();					// Get time since last call of this function
@@ -47,6 +48,11 @@ double PID::calcOutput(double input)
 	
 											//Serial.print("Error: ");
 	//Serial.println(integral);
+
+	//Serial.print(input);
+	//Serial.print(",");
+	//Serial.println(output);
+
 	return output;
 }
 
@@ -54,7 +60,7 @@ double PID::calcOutput(double input)
  * Returns the center output value of the PID
  * See PID.h for explanation
  */
-double PID::getBase()	
+double PID::getBase()
 {
 	return base;
 }
