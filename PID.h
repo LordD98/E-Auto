@@ -16,7 +16,8 @@ class PID
     void resetIntegrator();
     double calcOutput(double input);
     double getBase();
-        
+	void setP(double new_p);
+
   private:   
     double lastError, integral;
     double p, i, d;

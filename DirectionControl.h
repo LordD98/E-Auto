@@ -22,6 +22,8 @@ public:
 	void setup();
 	Servo directionServo;
 	
+	void updateCenterPos(int);
+	void set_p(double p);
 private:
 	PID controller;
 	
@@ -30,6 +32,6 @@ private:
 	int maxPos;		// Werte an der Spule
 	int minPos;		// Werte an der Spule
 	
-	int currentDirection;	// left - right
+	int currentDirection;	// Servo position (0-180)
 };
 

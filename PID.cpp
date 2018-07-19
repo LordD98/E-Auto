@@ -60,6 +60,11 @@ double PID::getBase()
 	return base;
 }
 
+ void PID::setP(double new_p)
+ {
+	 this->p = new_p;
+ }
+
 void PID::resetIntegrator()
 {
 	integral = 0;
