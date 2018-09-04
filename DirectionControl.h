@@ -22,7 +22,7 @@ public:
 	void setup();
 	Servo directionServo;
 	
-	void updateCenterPos(int);
+	//void updateCenterPos(int);
 	void set_p(double p);
 private:
 	PID controller;

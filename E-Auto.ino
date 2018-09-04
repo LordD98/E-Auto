@@ -13,7 +13,7 @@
 
 // pin declaration
 // do NOT use DigitalOut 0 & 1 (reserved for Serial)
-const int pin_servo = 5;			//pin for steering control 
+const int pin_servo = 6;			//pin for steering control 
 const int pin_motor = 3;			//pin for motor control
 const int pin_deadManSwitch =  8;	//dead man swich pin
 const int pin_spuleLeft = A1;		//Left resonant circuit
@@ -21,7 +21,7 @@ const int pin_spuleRight = A0;		//Right reso nant circuit
 const int pin_speedSensor = 2;		//Input signal for speed sensor signal; Pin2: INT0
 
 //init global variables and objects
-const int directionCenter = -26;
+const int directionCenter = 0;
 const int directionMaxValue = 400;
 const int directionMinValue = -400;
 
@@ -33,12 +33,14 @@ const int ofTrackDetectionLevel = 0;// minValue for off-track detection
 DirectionControl directionControl = DirectionControl(
 	pin_servo,																	// Servo-Pin
 	{directionMaxValue,directionMinValue,directionCenter},						// directionParamSet
-	{ 0.275, 0.1, 0.0, directionCenter, directionServoCenter, 0, directionServoMinValue, directionServoMaxValue }		// pidParamSet
-	//p=0.15-0.25 OK d= 0.01
+	{ 0.30, 0.0, 0.0, directionCenter, directionServoCenter, 0, directionServoMinValue, directionServoMaxValue }		// pidParamSet
+	// p=0.3!
 );
 
 const double idleSpeed = 0;			//Speed setpoint for idle
-MotorControl motorControl = MotorControl(pin_deadManSwitch, pin_motor, {2.0, 2.0, 0, 10.0, 0, 0, 5, 253});	// Works well
+#define LOW_SPEED 8.0	// SAFE: 8.0 & 20.0
+#define HIGH_SPEED 23.0 //
+MotorControl motorControl = MotorControl(pin_deadManSwitch, pin_motor, {2.0, 2.0, 0, LOW_SPEED, 0, 0, 5, 253});	// Works well
 // These values are also okay: {5.0, 5.0, 0, 0, 0, 0, 5, 253} 
 
 SpeedSensor speedSens = SpeedSensor(pin_speedSensor);
@@ -47,6 +49,8 @@ unsigned long lastMicros = 0;
 
 #define FILTER_LEN 32
 int rawValArray[FILTER_LEN];
+int rawValArray_left[FILTER_LEN];
+int rawValArray_right[FILTER_LEN];
 int center_average;
 
 void setup()
@@ -63,8 +67,8 @@ void setup()
 	motorControl.setup();
 	speedSens.setup();
 
-	int calibArray[32];											// Calibration
-	#define CALIB_LEN 32										//
+	#define CALIB_LEN 32										// Calibration
+	int calibArray[CALIB_LEN];									//
 	int sensor_left;											//
 	int sensor_right;											//
 	for (int i = 0; i<CALIB_LEN; i++)							//
@@ -75,13 +79,13 @@ void setup()
 		delay(1);											
 	}
 	center_average = getAverageInt(calibArray, CALIB_LEN);				//
-	directionControl.updateCenterPos(center_average);					//
+	//directionControl.updateCenterPos(center_average);					//
 	pinMode(A5, OUTPUT);
 	pinMode(A3, OUTPUT);
 	digitalWrite(A5, HIGH);
 	digitalWrite(A3, LOW);
 
-	motorControl.setSpeed(20.0);
+	motorControl.setSpeed(LOW_SPEED);
 	motorControl.setState(MOTOR_STATES::RUN);	// Start motor
 	//motorControl.softStart(10.0, &speedSens);
 }
@@ -92,29 +96,79 @@ void setup()
 void loop()
 {
 	static unsigned long startMicros = micros();
-
+#define MULT 1
 	//directionControl.set_p(static_cast<double>(analogRead(A4))/511.0);
 	//Serial.println(static_cast<double>(analogRead(A4)) / 511.0);
-	static byte index = 0;									// Direction-Sensor
-	int sensor_left = analogRead(pin_spuleLeft);			// Werte auslesen
-	int sensor_right = analogRead(pin_spuleRight);			//
-	rawValArray[index] = sensor_left-sensor_right;			//
-	index = (index + 1)  % FILTER_LEN;						//
-	int average = getAverageInt(rawValArray, FILTER_LEN);	//
+	static byte index = 0;													// Direction-Sensor
+	int sensor_left = MULT*analogRead(pin_spuleLeft);							// Werte auslesen
+	int sensor_right = MULT*analogRead(pin_spuleRight);							//
+	rawValArray[index] = (sensor_left-sensor_right);						//
+	rawValArray_left[index] = sensor_left;									//
+	rawValArray_right[index] = sensor_right;								//
+	index = (index + 1)  % FILTER_LEN;										//
+	int average = getAverageInt(rawValArray, FILTER_LEN) - center_average;	//
+	int averageLeft = getAverageInt(rawValArray_left, FILTER_LEN);			//
+	int averageRight = getAverageInt(rawValArray_right, FILTER_LEN);		//
+
+	if (averageLeft < 15 && averageRight < 15)	// old values left<15 && right<15 new left<1 right<1
+	{
+		motorControl.setState(MOTOR_STATES::STOP);		// Off track
+		digitalWrite(LED_BUILTIN, LOW);
+	}
+	else
+	{
+		motorControl.setState(MOTOR_STATES::RUN);
+		digitalWrite(LED_BUILTIN, HIGH);
+	}
+
+	/*
+	if (averageLeft < 20 && averageRight < 20)
+	{
+		motorControl.setState(MOTOR_STATES::STOP);		// Off track
+		digitalWrite(LED_BUILTIN, LOW);
+	}
+	else
+	{
+		motorControl.setState(MOTOR_STATES::RUN);
+		digitalWrite(LED_BUILTIN, HIGH);
+		if (averageLeft < 35 && averageRight < 100)
+		{
+			// Unter Spule right
+			if (averageLeft-averageRight > 0)
+			{
+				average = -200;
+			}
+		}
+		else if (averageRight < 35 && averageLeft < 100)
+		{
+			// Unter Spule left
+			if (averageLeft-averageRight < 0)
+			{
+				average = 200;
+			}
+		}
 	
-	//int max = getAbsMaxInt(rawValArray, FILTER_LEN);		// Off-Track Detection
-	//if (max<6)												//
-	//{														//	TODO:
-	//	digitalWrite(LED_BUILTIN, HIGH);					//  Try to measure both levels
-	//}														//  induvidually
-	//else													//
-	//{														//
-	//	digitalWrite(LED_BUILTIN, LOW);						//
-	//}							
-	
+	}
+	*/
+	/*
+	int max = getAbsMaxInt(rawValArray, FILTER_LEN);		// Off-Track Detection
+	if (max<6)											//
+	{														//	TODO:
+		digitalWrite(LED_BUILTIN, HIGH);					//  Try to measure both levels
+	}														//  induvidually
+	else													//
+	{														//
+		digitalWrite(LED_BUILTIN, LOW);						//
+	}							
+	*/
+
 	//Serial.print(sensor_left);
 	//Serial.print(",");
+	//Serial.print(averageLeft);
+	//Serial.print(",");
 	//Serial.print(sensor_right);
+	//Serial.print(",");
+	//Serial.print(averageRight);
 	//Serial.print(",");
 	//Serial.println(average);
 	
@@ -134,21 +188,22 @@ void loop()
 	//Serial.println("");
 	*/
 
-	double diff = static_cast<double>(average - center_average);
-	if (diff > 50 || diff < -50)
+	//double diff = static_cast<double>(average);
+	int max = getAbsMaxInt(rawValArray, FILTER_LEN);
+	if (max > 60)	// old value 50 new 15 // test 60
 	{
-		motorControl.setSpeed(10);
+		motorControl.setSpeed(LOW_SPEED);
 	}
 	else
 	{
-		motorControl.setSpeed(20);
+		motorControl.setSpeed(HIGH_SPEED);	// old value 20 new 15
 	}
 
-	motorControl.updateController(speedSens.getSpeed());	// Regler Updaten
+	motorControl.updateController(speedSens.getSpeed());			// Regler Updaten
 	//motorControl.setDuty(60);
-	directionControl.updateController(average);				// 
-	directionControl.updateDirection();						// 
-	motorControl.updateMotor();								// 
+	directionControl.updateController(average);	// old *1 new *10
+	motorControl.updateMotor();										// 
+	directionControl.updateDirection();								// 
 
 
 	//Serial.println(directionControl.getDirection());		// Debug

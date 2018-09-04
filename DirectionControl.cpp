@@ -17,11 +17,11 @@ void DirectionControl::setup()
 	directionServo.attach(servoPin);
 }
 
-void DirectionControl::updateCenterPos(int newCenter)
-{
-	centerPos = newCenter;
-	controller.setSoll(static_cast<double>(centerPos));
-}
+//void DirectionControl::updateCenterPos(int newCenter)
+//{
+//	centerPos = newCenter;
+//	controller.setSoll(static_cast<double>(centerPos));
+//}
 
 void DirectionControl::set_p(double p)
 {
